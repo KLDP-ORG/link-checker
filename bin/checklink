@@ -26,7 +26,8 @@ use 5.008;
 
 # Get rid of potentially unsafe and unneeded environment variables.
 delete(@ENV{qw(IFS CDPATH ENV BASH_ENV)});
-$ENV{PATH} = undef;
+#$ENV{PATH} = undef;
+$ENV{PATH} = '';
 
 # ...but we want PERL5?LIB honored even in taint mode, see perlsec, perl5lib,
 # http://www.mail-archive.com/cpan-testers-discuss%40perl.org/msg01064.html
@@ -363,10 +364,10 @@ $@
 EOF
         }
     }
-    $Cfg{Markup_Validator_URI} ||= 'http://validator.w3.org/check?uri=%s';
+    $Cfg{Markup_Validator_URI} ||= 'http://validator.kldp.org/check?uri=%s';
     $Cfg{CSS_Validator_URI} ||=
-        'http://jigsaw.w3.org/css-validator/validator?uri=%s';
-    $Cfg{Doc_URI} ||= 'http://validator.w3.org/docs/checklink.html';
+        'http://css-validator.kldp.org/validator?uri=%s';
+    $Cfg{Doc_URI} ||= 'http://validator.kldp.org/docs/checklink.html';
     $Cfg{Doc_Base_URI} ||= '/checklink/docs/';
     $Cfg{Doc_Images_URI} ||= '/checklink/images/';
 
@@ -506,7 +507,7 @@ if ($Opts{Command_Line}) {
 
     &usage(1) unless scalar(@ARGV);
 
-    $Opts{_Self_URI} = 'http://validator.w3.org/checklink';   # For HTML output
+    $Opts{_Self_URI} = 'http://validator.kldp.org/checklink';   # For HTML output
 
     &ask_password() if ($Opts{User} && !$Opts{Password});
 
@@ -948,11 +949,11 @@ sub ask_password ()
         Term::ReadKey->import(qw(ReadMode));
     };
     if ($@) {
-        warn('Warning: Term::ReadKey 2.00 or newer not available, ' .
-                "password input disabled.\n");
+        warn('경고: Term::ReadKey 2.00 또는 이상 버전이 필요하므로, ' .
+                "암호 입력을 할 수 없습니다.\n");
         return;
     }
-    printf(STDERR 'Enter the password for user %s: ', $Opts{User});
+    printf(STDERR '%s 사용자 암호 입력: ', $Opts{User});
     ReadMode('noecho', *STDIN);
     chomp($Opts{Password} = <STDIN>);
     ReadMode('restore', *STDIN);
@@ -1092,11 +1093,10 @@ sub check_uri (\%\$$$$;\$$)
 
     if ($Opts{HTML}) {
         $doc_header .=
-            ("<h2>\nProcessing\t" . &show_url($response->{absolute_uri}) .
-                "\n</h2>\n\n");
+            ("<h2>\n" . &show_url($response->{absolute_uri}) . " 검사\n</h2>\n\n");
     }
     else {
-        $doc_header .= "\nProcessing\t$response->{absolute_uri}\n\n";
+        $doc_header .= "\n$response->{absolute_uri} 검사\n\n";
     }
 
     if (!$Opts{Quiet}) {
@@ -1125,16 +1125,16 @@ sub check_uri (\%\$$$$;\$$)
         printf(
             <<'EOF', $Accept, $acclang, $send_referer, $cookies, $Opts{Sleep_Time}, $s);
 
-Settings used:
+사용된 설정:
 - Accept: %s
 - Accept-Language: %s
 - Referer: %s
 - Cookies: %s
-- Sleeping %d second%s between requests to each server
+- 각 서버로의 요청 간격 %d 초%s
 EOF
-        printf("- Excluding links matching %s\n", $Opts{Exclude})
+        printf("- %s 와 매칭된 링크 제외\n", $Opts{Exclude})
             if defined($Opts{Exclude});
-        printf("- Excluding links in documents whose URIs match %s\n",
+        printf("- %s 와 매치되는 URI를 가진 문서의 링크 제외\n",
             join(', ', @{$Opts{Exclude_Docs}}))
             if @{$Opts{Exclude_Docs}};
     }
@@ -1142,9 +1142,9 @@ EOF
     if ($Opts{HTML}) {
         if (!$Opts{Summary_Only}) {
             my $accept       = &encode($Accept);
-            my $acclang      = &encode($Opts{Accept_Language} || '(not sent)');
-            my $send_referer = $Opts{No_Referer} ? 'not sent' : 'sending';
-            my $s            = $Opts{Sleep_Time} == 1 ? '' : 's';
+            my $acclang      = &encode($Opts{Accept_Language} || '(전송 안함)');
+            my $send_referer = $Opts{No_Referer} ? '전송 않함' : '전송';
+            my $s            = $Opts{Sleep_Time} == 1 ? '' : '';
             printf(
                 <<'EOF', $accept, $acclang, $send_referer, $Opts{Sleep_Time}, $s);
 <div class="settings">
@@ -1153,30 +1153,30 @@ Settings used:
   <li><tt><a href="http://tools.ietf.org/html/rfc7231#section-5.3.2">Accept</a></tt>: %s</li>
   <li><tt><a href="http://tools.ietf.org/html/rfc7231#section-5.3.5">Accept-Language</a></tt>: %s</li>
   <li><tt><a href="http://tools.ietf.org/html/rfc7231#section-5.5.2">Referer</a></tt>: %s</li>
-  <li>Sleeping %d second%s between requests to each server</li>
+  <li>각 서버로의 요청 간격 %d 초%s</li>
  </ul>
 </div>
 EOF
-            printf("<p>Go to <a href=\"#%s\">the results</a>.</p>\n",
+            printf("<p><a href=\"#%s\">결과</a> 보기</p>\n",
                 $result_anchor);
             my $esc_uri = URI::Escape::uri_escape($response->{absolute_uri},
                 "^A-Za-z0-9.");
-            print "<p>For reliable link checking results, check ";
+            print "<p>링크 체크의 결과 신뢰도를 높이기 위해서, 먼저 ";
 
             if (!$response->{IsCss}) {
-                printf("<a href=\"%s\">HTML validity</a> and ",
+                printf("<a href=\"%s\">HTML 검증</a>과 ",
                     &encode(sprintf($Cfg{Markup_Validator_URI}, $esc_uri)));
             }
             printf(
-                "<a href=\"%s\">CSS validity</a> first.</p>
-<p>Back to the <a accesskey=\"1\" href=\"%s\">link checker</a>.</p>\n",
+                "<a href=\"%s\">CSS 검증</a> 검사를 하십시오.</p>\n" .
+                "<p><a accesskey=\"1\" href=\"%s\">link checker</a> 페이지로 돌아가기.</p>\n",
                 &encode(sprintf($Cfg{CSS_Validator_URI}, $esc_uri)),
                 &encode($Opts{_Self_URI})
             );
 
             printf(<<'EOF', $result_anchor);
 <div class="progress" id="progress%s">
-<h3>Status: <span></span></h3>
+<h3>상태: <span></span></h3>
 <div class="progressbar"><div></div></div>
 <pre>
 EOF
@@ -1185,8 +1185,8 @@ EOF
 
     if ($Opts{Summary_Only} && !$Opts{Quiet}) {
         print '<p>' if $Opts{HTML};
-        print 'This may take some time';
-        print "... (<a href=\"$Cfg{Doc_URI}#wait\">why?</a>)</p>"
+        print '잠시 기다려 주십시오...';
+        print "... (<a href=\"$Cfg{Doc_URI}#wait\">왜?</a>)</p>"
             if $Opts{HTML};
         print " if the document has many links to check.\n" unless $Opts{HTML};
     }
@@ -1202,7 +1202,7 @@ EOF
     # Check anchors
     ###############
 
-    print "Checking anchors...\n" unless $Opts{Summary_Only};
+    print "anchor 검사...\n" unless $Opts{Summary_Only};
 
     my %errors;
     while (my ($anchor, $lines) = each(%{$p->{Anchors}})) {
@@ -1219,12 +1219,12 @@ EOF
             $errors{$anchor} = 1 if ($times > 1);
         }
     }
-    print " done.\n" unless $Opts{Summary_Only};
+    print " 완료.\n" unless $Opts{Summary_Only};
 
     # Check links
     #############
 
-    &hprintf("Recording all the links found: %d\n",
+    &hprintf("발견된 모든 링크를 기록 하고 있습니다: %d\n",
         scalar(keys %{$p->{Links}}))
         if ($Opts{Verbose});
     my %links;
@@ -1278,7 +1278,7 @@ EOF
 
     my $nlinks = scalar(@order);
 
-    &hprintf("Checking %d links to build list of broken URI's\n", $nlinks)
+    &hprintf("깨진 URI 리스트를 만들기 위해 %d 링크를 검사 중\n", $nlinks)
         if ($Opts{Verbose});
 
     my %broken;
@@ -1292,10 +1292,10 @@ EOF
             print ' ' if ($Opts{HTML} && !$Opts{Command_Line});
         }
         else {
-            &hprintf("\nChecking link %s\n", $u);
+            &hprintf("\n%s 링크 검사\n", $u);
             my $progress = ($link_num / $nlinks) * 100;
             printf(
-                '<script type="text/javascript">show_progress("%s", "Checking link %s", "%.1f%%");</script>',
+                '<script type="text/javascript">show_progress("%s", "%s 링크 검사", "%.1f%%");</script>',
                 $result_anchor, &encode($u), $progress)
                 if (!$Opts{Command_Line} &&
                 $Opts{HTML} &&
@@ -1306,7 +1306,7 @@ EOF
         # Check that a link is valid
         &check_validity($uri, $u, ($depth != 0 && &in_recursion_scope($u)),
             \%links, \%redirects);
-        &hprintf("\tReturn code: %s\n", $results{$u}{location}{code})
+        &hprintf("\t응답 코드: %s\n", $results{$u}{location}{code})
             if ($Opts{Verbose});
         if ($results{$u}{location}{success}) {
 
@@ -1323,10 +1323,9 @@ EOF
                 if ($Opts{Verbose}) {
                     my @line_nums = sort { $a <=> $b } keys(%$lines);
                     &hprintf(
-                        "\t\t%s %s - Line%s: %s\n",
+                        "\t\t%s %s - 라인: %s\n",
                         $fragment,
-                        $fragment_ok             ? 'OK' : 'Not found',
-                        (scalar(@line_nums) > 1) ? 's'  : '',
+                        $fragment_ok             ? 'OK' : '발견하지 못함',
                         join(', ', @line_nums)
                     );
                 }
@@ -1352,14 +1351,14 @@ EOF
         &time_diff($start, &get_timestamp())
     ) unless $Opts{Summary_Only};
     printf(
-        '<script type="text/javascript">show_progress("%s", "Done. Document processed in %s seconds.", "100%%");</script>',
+        '<script type="text/javascript">show_progress("%s", "완료. 수행 시간 %s초.", "100%%");</script>',
         $result_anchor, &time_diff($start, &get_timestamp()))
         if ($Opts{HTML} && !$Opts{Summary_Only});
 
     # Display results
     if ($Opts{HTML} && !$Opts{Summary_Only}) {
         print("</pre>\n</div>\n");
-        printf("<h2><a name=\"%s\">Results</a></h2>\n", $result_anchor);
+        printf("<h2><a name=\"%s\">결과</a></h2>\n", $result_anchor);
     }
     print "\n" unless $Opts{Quiet};
 
@@ -1387,7 +1386,8 @@ EOF
                 if (!$Opts{Command_Line}) {
                     if ($doc_count == $Opts{Max_Documents}) {
                         print(
-                            "<hr />\n<p><strong>Maximum number of documents ($Opts{Max_Documents}) reached!</strong></p>\n"
+                            "<hr />\n<p><strong>지정된 문서의 최대 수($Opts{Max_Documents})에 도달
+했습니다.!</strong></p>\n"
                         );
                     }
                     if ($doc_count >= $Opts{Max_Documents}) {
@@ -1528,8 +1528,8 @@ sub get_document ($\$$;\%\$$$$$)
                     &print_form($params, $cookie, $check_num) if $is_start;
                     print "<p>", &status_icon($response->code());
                 }
-                &hprintf("\nError: %d %s\n",
-                    $response->code(), $response->message() || '(no message)');
+                &hprintf("\n에러: %d %s\n",
+                    $response->code(), $response->message() || '(메시지 없음)');
                 print "</p>\n" if $Opts{HTML};
             }
         }
@@ -1563,7 +1563,7 @@ sub get_document ($\$$;\%\$$$$$)
                 print "<p>", &status_icon(406);
 
             }
-            &hprintf("Can't check links: %s.\n", $failed_reason);
+            &hprintf("검사할 수 없는 링크: %s.\n", $failed_reason);
             print "</p>\n" if $Opts{HTML};
         }
         $response->{Stop} = 1;
@@ -1738,7 +1738,7 @@ sub get_uri ($\$;\$$\%$$$$)
     }
 
     # @@@ subtract robot delay from the "fetched in" time?
-    &hprintf(" fetched in %s seconds\n", &time_diff($start, &get_timestamp()))
+    &hprintf(" 수행시간 %s초\n", &time_diff($start, &get_timestamp()))
         if $verbose_progress;
 
     $response->{IsCss} =
@@ -1778,7 +1778,7 @@ sub record_results (\$$$$)
     for (my $tmp = $response->previous(); $tmp; $tmp = $tmp->previous()) {
         $results{$uri}{location}{orig}         = $tmp->code();
         $results{$uri}{location}{orig_message} = $tmp->message() ||
-            '(no message)';
+            '(메시지 없음)';
     }
     $results{$uri}{location}{success} = $response->is_success();
 
@@ -1812,7 +1812,7 @@ sub record_results (\$$$$)
     }
 
     # Did it fail?
-    $results{$uri}{location}{message} = $response->message() || '(no message)';
+    $results{$uri}{location}{message} = $response->message() || '(메시지 없음)';
     if (!$results{$uri}{location}{success}) {
         &hprintf(
             "Error: %d %s\n",
@@ -1854,7 +1854,7 @@ sub parse_document (\$\$$$$)
     my $start;
     if (!$Opts{Summary_Only}) {
         $start = &get_timestamp();
-        print("Parsing...\n");
+        print("분석...\n");
     }
 
     # Content-Encoding etc already decoded in get_document().
@@ -1899,7 +1899,7 @@ sub parse_document (\$\$$$$)
     if (!$Opts{Summary_Only}) {
         my $stop = &get_timestamp();
         print "\r" if $Opts{Progress};
-        &hprintf(" done (%d lines in %s seconds).\n",
+        &hprintf(" 완료 (%d 라인 / 처리 시간 %s초).\n",
             $p->{Total}, &time_diff($start, $stop));
     }
 
@@ -2264,7 +2264,7 @@ sub check_validity (\$\$$\%\%)
         if (!defined($results{$uri}{location}{type}) ||
             $results{$uri}{location}{type} !~ $ContentTypes)
         {
-            &hprintf("Can't check content: Content-Type for '%s' is '%s'.\n",
+            &hprintf("내용을 검사할 수 없음: '%s' 에 대한 Content-Type 은 '%s' 입니다..\n",
                 $uri, $results{$uri}{location}{type})
                 if ($Opts{Verbose});
             $response->content("");
@@ -2506,14 +2506,14 @@ sub anchors_summary (\%\%)
         else {
             print("Anchors\n\n");
         }
-        &hprintf("Found %d anchor%s.\n", $n, ($n == 1) ? '' : 's');
+        &hprintf("%d anchor 발견.\n", $n);
         print("</p>\n") if $Opts{HTML};
     }
 
     # List of the duplicates, if any.
     my @errors = keys %{$errors};
     if (!scalar(@errors)) {
-        print("<p>Valid anchors!</p>\n")
+        print("<p>정상 anchors!</p>\n")
             if (!$Opts{Quiet} && $Opts{HTML} && $n);
         return;
     }
@@ -2521,14 +2521,14 @@ sub anchors_summary (\%\%)
 
     print_doc_header();
     print('<p>') if $Opts{HTML};
-    print('List of duplicate and empty anchors');
+    print('중복 되거나 빈 anchor 리스트');
     print <<'EOF' if $Opts{HTML};
 </p>
-<table class="report" border="1" summary="List of duplicate and empty anchors.">
+<table class="report" border="1" summary="중복 또는 빈 anchor 리스트">
 <thead>
 <tr>
-<th>Anchor</th>
-<th>Lines</th>
+<th>앵커</th>
+<th>라인</th>
 </tr>
 </thead>
 <tbody>
@@ -2545,11 +2545,10 @@ EOF
             $format = "<tr><td class=\"broken\">%s</td><td>%s</td></tr>\n";
         }
         else {
-            my $s = (scalar(@unique) > 1) ? 's' : '';
-            $format = "\t%s\tLine$s: %s\n";
+            $format = "\t%s\t라인: %s\n";
         }
         printf($format,
-            &encode(length($anchor) ? $anchor : 'Empty anchor'),
+            &encode(length($anchor) ? $anchor : '빈 anchor'),
             join(', ', @unique));
     }
 
@@ -2594,28 +2593,28 @@ sub show_link_report (\%\%\%\%\@;$\%)
             if ($u =~ m/^javascript:/) {
                 if ($Opts{HTML}) {
                     $whattodo =
-                        'You must change this link: people using a browser without JavaScript support
-will <em>not</em> be able to follow this link. See the
-<a href="http://www.w3.org/TR/WAI-WEBCONTENT/#tech-scripts">Web Content
-Accessibility Guidelines on the use of scripting on the Web</a> and the
-<a href="http://www.w3.org/TR/WCAG10-HTML-TECHS/#directly-accessible-scripts">techniques
-on how to solve this</a>.';
+                        '이 링크를 변경해야 합니다: 자바 스크립트를 지원하지 않는 브라우저를 사용하는
+사람들은 이 링크를 <em>사용</em>할 수 없습니다.
+<a href="http://www.w3.org/TR/1999/WAI-WEBCONTENT-19990505/#tech-scripts">웹
+상에서의 스크립트 사용에 대한 웹 컨덴츠 접근 가이드라인</a> 과
+<a href="http://www.w3.org/TR/WCAG10-HTML-TECHS/#directly-accessible-scripts">이
+문제를 해결하기 이한 기술문서</a> 를 참고 하십시오.';
                 }
                 else {
                     $whattodo =
-                        'Change this link: people using a browser without JavaScript support will not be able to follow this link.';
+                        '이 링크를 변경해야 합니다: JavaScript를 지원하지 않는 브라우저를 사용하는 사람들은 이 링크를 사용할 수 없습니다.';
                 }
             }
             elsif ($c == RC_ROBOTS_TXT()) {
                 $whattodo =
-                    'The link was not checked due to robots exclusion ' .
-                    'rules. Check the link manually.';
+                    '이 링크는 robot 제외 룰 때문에 검사를 할 수 없습니다. ' .
+                    '이 링크는 수동으로 검사 하십시오.';
             }
             elsif ($redirect_loop) {
                 $whattodo =
-                    'Retrieving the URI results in a redirect loop, that should be '
-                    . 'fixed.  Examine the redirect sequence to see where the loop '
-                    . 'occurs.';
+                    '무한 재전송이 발생하는 URI 결과를 가져오고 있습니다. 이는 수정되어야 '
+                    . '합니다. 루프가 어디서 발생하는지 찾기 위하여 재전송 순서를 '
+                    . '검사 하십시오.';
             }
             else {
                 $whattodo = $todo->{$c};
@@ -2626,21 +2625,21 @@ on how to solve this</a>.';
             # Redirects
             if (($u . '/') eq $redirects{$u}) {
                 $whattodo =
-                    'The link is missing a trailing slash, and caused a redirect. Adding the trailing slash would speed up browsing.';
+                    '링크의 마지막에 슬래쉬가 없어 재전송 되고 있습니다. 브라우징 속도를 높이기 위하여 링크 마지막에 슬래쉬를 붙이십시오.';
             }
             elsif ($c == 307 || $c == 302) {
                 $whattodo =
-                    'This is a temporary redirect. Update the link if you believe it makes sense, or leave it as is.';
+                    '일시적인 재전송이 발생하고 있습니다. 변경된 것이 확실하다면 수정을 하시고, 그렇지 않다면 그냥 두십시오.';
             }
             elsif ($c == 301) {
                 $whattodo =
-                    'This is a permanent redirect. The link should be updated.';
+                    $whattodo = '끝이 없는 재전송이 발생합니다. link를 업데이트 하십시오.';
             }
         }
 
         my @unique = &sort_unique(map { line_number($_) } @total_lines);
         my $lines_list = join(', ', @unique);
-        my $s = (scalar(@unique) > 1) ? 's' : '';
+        my $s = (scalar(@unique) > 1) ? '' : '';
         undef @unique;
 
         my @http_codes = ($currloc->{code});
@@ -2671,10 +2670,10 @@ on how to solve this</a>.';
                 }
             }
             my $redirmsg =
-                $redirect_loop ? ' <em>redirect loop detected</em>' : '';
+                $redirect_loop ? ' <em>무한 재전송 감지</em>' : '';
             printf("
-<dt%s>%s <span class='msg_loc'>Line%s: %s</span> %s</dt>
-<dd class='responsecode'><strong>Status</strong>: %s %s %s</dd>
+<dt%s>%s <span class='msg_loc'>라인%s: %s</span> %s</dt>
+<dd class='responsecode'><strong>상태</strong>: %s %s %s</dd>
 <dd class='message_explanation'><p>%s %s</p></dd>\n",
 
                 # Anchor for return codes
@@ -2721,13 +2720,13 @@ on how to solve this</a>.';
                     '',
             );
             if ($#fragments >= 0) {
-                printf("<dd>Broken fragments: <ul>\n");
+                printf("<dd>깨진 fragment: <ul>\n");
             }
         }
         else {
-            my $redirmsg = $redirect_loop ? ' redirect loop detected' : '';
+            my $redirmsg = $redirect_loop ? ' 무한 재전송 감지' : '';
             printf(
-                "\n%s\t%s\n  Code: %s %s\n%s\n",
+                "\n%s\t%s\n  코드: %s %s\n%s\n",
 
                 # List of redirects
                 $redirected ? join("\n-> ", @redirects_urls) . $redirmsg : $u,
@@ -2746,10 +2745,10 @@ on how to solve this</a>.';
             );
             if ($#fragments >= 0) {
                 if ($currloc->{code} == 200) {
-                    print("The following fragments need to be fixed:\n");
+                    print("다음 fragment는 수정이 필요 합니다:\n");
                 }
                 else {
-                    print("Fragments:\n");
+                    print("Fragment:\n");
                 }
             }
         }
@@ -2758,14 +2757,14 @@ on how to solve this</a>.';
         for my $f (@fragments) {
             my @unique_lines =
                 &sort_unique(keys %{$links->{$u}{fragments}{$f}});
-            my $plural = (scalar(@unique_lines) > 1) ? 's' : '';
+            my $plural = (scalar(@unique_lines) > 1) ? '' : '';
             my $unique_lines = join(', ', @unique_lines);
             if ($Opts{HTML}) {
-                printf("<li>%s<em>#%s</em> (line%s %s)</li>\n",
+                printf("<li>%s<em>#%s</em> (라인%s %s)</li>\n",
                     &encode($u), &encode($f), $plural, $unique_lines);
             }
             else {
-                printf("\t%-30s\tLine%s: %s\n", $f, $plural, $unique_lines);
+                printf("\t%-30s\t라인%s: %s\n", $f, $plural, $unique_lines);
             }
         }
 
@@ -2798,49 +2797,50 @@ sub links_summary (\%\%\%\%)
 
     my %todo = (
         200 =>
-            'Some of the links to this resource point to broken URI fragments (such as index.html#fragment).',
+            'Some of the links to this resource point to broken URI fragments (index.html#fragment 같은).',
         300 =>
-            'This often happens when a typo in the link gets corrected automatically by the server. For the sake of performance, the link should be fixed.',
+            '링크의 오타를 서버가 자동으로 수정해 주는 경우 자주 발생합니다. 성능 향상을 위해서는 링크를 수정하십시오.',
         301 =>
-            'This is a permanent redirect. The link should be updated to point to the more recent URI.',
+            '영구적인 재전송이 발생합니다. 최근의 URI로 링크를 업데이트 하십시오.',
         302 =>
-            'This is a temporary redirect. Update the link if you believe it makes sense, or leave it as is.',
+            '임시적인 재전송이 발생합니다. 링크의 변경이 확실하면 링크를 업데이트 하고, 그렇지 않다면 그냥 두십시오.',
         303 =>
             'This rare status code points to a "See Other" resource. There is generally nothing to be done.',
         307 =>
-            'This is a temporary redirect. Update the link if you believe it makes sense, or leave it as is.',
+            '임시적인 재전송이 발생합니다. 링크의 변경이 확실하면 링크를 업데이트 하고, 그렇지 않다면 그냥 두십시오.',
         400 =>
-            'This is usually the sign of a malformed URL that cannot be parsed by the server. Check the syntax of the link.',
+            '서버가 분석할 수 없는 잘못된 URL을 사용할 경우 발생합니다. 링크의 문법을 확인해 보십시오.',
         401 =>
-            "The link is not public and the actual resource is only available behind authentication. If not already done, you could specify it.",
+            "link가 공개되어 있지 않습니다. 실제 리소스는 인증을 통해서만 접근이 가능 합니다. If not already done, you could specify it.",
         403 =>
-            'The link is forbidden! This needs fixing. Usual suspects: a missing index.html or Overview.html, or a missing ACL.',
+            '링크 접근 권한이 없습니다! 수정이 필요 합니다. 일반적인 이유: index.html 또는 Overview.html 파일이 없거나, ACL이 누락된 경우.',
         404 =>
-            'The link is broken. Double-check that you have not made any typo, or mistake in copy-pasting. If the link points to a resource that no longer exists, you may want to remove or fix the link.',
+            '링크가 깨졌습니다. 오타 또는 복사-붙이기 실수 여부를 확인해 보십시오. 이 링크가 더이상 존재하지 않는다면, 이 링크를 삭제 하십시오.',
         405 =>
-            'The server does not allow HTTP HEAD requests, which prevents the Link Checker to check the link automatically.  Check the link manually.',
+            '자동으로 링크를 검사하기 위한 Link Checker를 막도록 서버에서 HTTP HEAD 요청을 허락하지 않습니다. 수동으로 링크를 확인 하십시오.',
         406 =>
             "The server isn't capable of responding according to the Accept* headers sent. This is likely to be a server-side issue with negotiation.",
         407 => 'The link is a proxy, but requires Authentication.',
-        408 => 'The request timed out.',
-        410 => 'The resource is gone. You should remove this link.',
-        415 => 'The media type is not supported.',
-        500 => 'This is a server side problem. Check the URI.',
+        407 => '프락시의 링크 이며, 인증이 필요 합니다.',
+        408 => '요청 시간 만료',
+        410 => 'The resource is gone. 이 링크를 제거 하십시오.',
+        415 => '이 미디어 형식은 지원하지 않습니다.',
+        500 => '서버 문제 입니다. URI를 확인 하십시오.',
         501 =>
-            'Could not check this link: method not implemented or scheme not supported.',
+            '이 링크를 검사할 수 없음: 현재 준비 중인 방식이거나, 지원하지 않는 스키마 입니다.',
         503 =>
-            'The server cannot service the request, for some unknown reason.',
+            '알수 없는 이유로, 서버가 요청에 대한 서비스를 하지 않습니다.',
 
         # Non-HTTP codes:
         RC_ROBOTS_TXT() => sprintf(
-            'The link was not checked due to %srobots exclusion rules%s. Check the link manually, and see also the link checker %sdocumentation on robots exclusion%s.',
+            '이 링크는 %srobots 제한 룰%s에 의하여 검사할 수 없으므로 수동으로 검사 하셔야 합니다. 이에 대해서는 link checker의 %srobots 제한 문서 %s를 참조 하시기 바랍니다.',
             $Opts{HTML} ? (
                 '<a href="http://www.robotstxt.org/robotstxt.html">', '</a>',
                 "<a href=\"$Cfg{Doc_URI}#bot\">",                     '</a>'
                 ) : ('') x 4
         ),
         RC_DNS_ERROR() =>
-            'The hostname could not be resolved. Check the link for typos.',
+            '호스트 이름의 IP를 찾을 수 없습니다. link에 오타가 있는지 확인해 보십시오.',
         RC_IP_DISALLOWED() =>
             sprintf(
             'The link resolved to a %snon-public IP address%s, and this link checker instance has been configured to not access such addresses. This may be a real error or just a quirk of the name resolver configuration on the server where the link checker runs. Check the link manually, in particular its hostname/IP address.',
@@ -2848,7 +2848,7 @@ sub links_summary (\%\%\%\%)
                 ('<a href="http://www.ietf.org/rfc/rfc1918.txt">', '</a>') :
                 ('') x 2),
         RC_PROTOCOL_DISALLOWED() =>
-            'Accessing links with this URI scheme has been disabled in link checker.',
+            '이 URI 스키마는 link checker가 접근할 수 없습니다.',
     );
     my %priority = (
         410 => 1,
@@ -2889,17 +2889,17 @@ sub links_summary (\%\%\%\%)
         if (!$Opts{Quiet}) {
             print_doc_header();
             if ($Opts{HTML}) {
-                print "<h3>Links</h3>\n<p>Valid links!</p>\n";
+                print "<h3>링크</h3>\n<p>유효한 link!</p>\n";
             }
             else {
-                print "\nValid links.\n";
+                print "\n유효한 link.\n";
             }
         }
     }
     else {
         print_doc_header();
         print('<h3>') if $Opts{HTML};
-        print("\nList of broken links and other issues");
+        print("\n깨진 링크 리스트 및 다른 이슈");
 
         #print(' and redirects') if $Opts{Redirects};
 
@@ -2932,12 +2932,12 @@ sub links_summary (\%\%\%\%)
             # Print a summary
             print <<'EOF';
 </h3>
-<p><em>There are issues with the URLs listed below. The table summarizes the
-issues and suggested actions by HTTP response status code.</em></p>
+<p><em>깨진 링크와 Fragments 리스트가 있습니다. 처리 과정을 알고 싶다면 아래의
+테이블을 참조 하십시오.</em></p>
 <table class="report" border="1" summary="List of issues and suggested actions.">
 <thead>
 <tr>
-<th>Code</th>
+<th>코드</th>
 <th>Occurrences</th>
 <th>What to do</th>
 </tr>
@@ -2965,9 +2965,9 @@ EOF
     if ($Opts{Dir_Redirects} && ($#dir_redirect_urls > -1)) {
         print_doc_header();
         print('<h3>') if $Opts{HTML};
-        print("\nList of redirects");
+        print("\n재전송 리스트");
         print(
-            "</h3>\n<p>The links below are not broken, but the document does not use the exact URL, and the links were redirected. It may be a good idea to link to the final location, for the sake of speed.</p>"
+            "</h3>\n<p>다음 문서들은 잘못된 링크가 아닙니다. 하지만, 정확한 URL을 가지고 있지 않고, 서버에 의해서 재전송 되고 있습니다. 속도의 향상을 위해서는 링크를 최종 위치로 수정하는 것이 좋습니다.</p>"
         ) if $Opts{HTML};
         &show_link_report($links, $results, $broken, $redirects,
             \@dir_redirect_urls);
@@ -2989,9 +2989,9 @@ sub global_stats ()
         ($doc_count <= $Opts{Max_Documents}) ? $doc_count :
                                                $Opts{Max_Documents};
     return sprintf(
-        'Checked %d document%s in %s seconds.',
+        '%d 문서%s 검사 (%s 초).',
         $n_docs,
-        ($n_docs == 1) ? '' : 's',
+        ($n_docs == 1) ? '' : '',
         &time_diff($timestamp, $stop)
     );
 }
@@ -3033,11 +3033,11 @@ sub html_header ($$)
 
 sub banner ($)
 {
-    my $tagline = "Check links and anchors in Web pages or full Web sites";
+    my $tagline = "웹페이지나 전체 웹 사이트의 link와 anchor를 검사";
 
     printf(
-        <<'EOF', $Cfg{Doc_Images_URI} . 'w3c.png', $tagline);
-<div id="banner"><h1 id="title"><a href="http://www.w3.org/" title="W3C"><img alt="W3C" id="logo" src="%s" width="110" height="61" /></a>
+        <<'EOF', URI->new_abs("../images/w3c.png", $Cfg{Doc_URI}), $tagline);
+<div id="banner"><h1 id="title"><a href="http://validator.kldp.org/checklink" title="W3C"><img alt="W3C" id="logo" src="%s" width="110" height="61" /></a>
 <a href="checklink"><span>Link Checker</span></a></h1>
 <p id="tagline">%s</p></div>
 <div id="main">
@@ -3120,13 +3120,11 @@ sub html_footer ()
         print <<'EOF';
 <div class="intro">
   <p>
-    This Link Checker looks for issues in links, anchors and referenced objects
-    in a Web page, CSS style sheet, or recursively on a whole Web site. For
-    best results, it is recommended to first ensure that the documents checked
-    use Valid <a href="http://validator.w3.org/">(X)HTML Markup</a> and
-    <a href="http://jigsaw.w3.org/css-validator/">CSS</a>. The Link Checker is
-    part of the W3C's <a href="http://www.w3.org/QA/Tools/">validators and
-    Quality Web tools</a>.
+    링크 체커는 웹 페이지나 전체 웹사이트의 재귀적인 link, anchor, referenced object에
+    대한 이슈를 검사합니다. 가장 좋은 결과를 위해서, 먼저
+    <a href="http://validator.kldp.org/">(X)HTML Markup 검사</a>를 선행하십시오.
+    링크 체커는 W3C의 <a href="http://www.w3.org/QA/Tools/">validators 와 품질
+    향상을 위한 웹 도구</a>의 일부분입니다.
   </p>
 </div>
 EOF
@@ -3134,10 +3132,10 @@ EOF
     printf(<<'EOF', $Cfg{Doc_URI}, $Cfg{Doc_URI}, $PACKAGE, $REVISION);
 </div><!-- main -->
 <ul class="navbar" id="menu">
-  <li><a href="%s" accesskey="3" title="Documentation for this Link Checker Service">Docs</a></li>
-  <li><a href="http://search.cpan.org/dist/W3C-LinkChecker/" accesskey="2" title="Download the source / Install this service">Download</a></li>
-  <li><a href="%s#csb" title="feedback: comments, suggestions and bugs" accesskey="4">Feedback</a></li>
-  <li><a href="http://validator.w3.org/" title="Validate your markup with the W3C Markup Validation Service">Validator</a></li>
+  <li><a href="%s" accesskey="3" title="이 Link Checker 서비스를 위한 문서">문서</a></li>
+  <li><a href="http://search.cpan.org/dist/W3C-LinkChecker/" accesskey="2" title="다운로스 소스 / 서비스 설치">다운로드</a></li>
+  <li><a href="%s#csb" title="피드백: 조언, 제안, 버그" accesskey="4">피드백</a></li>
+  <li><a href="/" title="W3C Markup Validation 서비스로 markup 검사">Validator</a></li>
 </ul>
 <div>
 <address>
@@ -3191,49 +3189,49 @@ sub print_form (\%$$)
     my $cookie_options = '';
     if ($valid_cookie) {
         $cookie_options = "
-    <label for=\"cookie1_$check_num\"><input type=\"radio\" id=\"cookie1_$check_num\" name=\"cookie\" value=\"nochanges\" checked=\"checked\" /> Don't modify saved options</label>
-    <label for=\"cookie2_$check_num\"><input type=\"radio\" id=\"cookie2_$check_num\" name=\"cookie\" value=\"set\" /> Save these options</label>
-    <label for=\"cookie3_$check_num\"><input type=\"radio\" id=\"cookie3_$check_num\" name=\"cookie\" value=\"clear\" /> Clear saved options</label>";
+    <label for=\"cookie1_$check_num\"><input type=\"radio\" id=\"cookie1_$check_num\" name=\"cookie\" value=\"nochanges\" checked=\"checked\" /> 저장 된 옵션을 수정할 수 없음</label>
+    <label for=\"cookie2_$check_num\"><input type=\"radio\" id=\"cookie2_$check_num\" name=\"cookie\" value=\"set\" /> >이 옵션을 저장</label>
+    <label for=\"cookie3_$check_num\"><input type=\"radio\" id=\"cookie3_$check_num\" name=\"cookie\" value=\"clear\" /> 저장된 옵션 제거</label>";
     }
     else {
         $cookie_options = "
-    <label for=\"cookie_$check_num\"><input type=\"checkbox\" id=\"cookie_$check_num\" name=\"cookie\" value=\"set\" /> Save options in a <a href=\"http://tools.ietf.org/html/rfc6265\">cookie</a></label>";
+    <label for=\"cookie_$check_num\"><input type=\"checkbox\" id=\"cookie_$check_num\" name=\"cookie\" value=\"set\" /><a href=\"http://www.w3.org/Protocols/rfc2109/rfc2109\">쿠키</a>에 옵션 저장</label>";
     }
 
     print "<form action=\"", $Opts{_Self_URI},
         "\" method=\"get\" onsubmit=\"return uriOk($check_num)\" accept-charset=\"UTF-8\">
-<p><label for=\"uri_$check_num\">Enter the address (<a href=\"http://www.w3.org/Addressing/\">URL</a>)
-of a document that you would like to check:</label></p>
+<p><label for=\"uri_$check_num\">검사할 문싀의 주소(<a href=\"http://www.w3.org/Addressing/\">URL</a>)
+입력:</label></p>
 <p><input type=\"text\" size=\"50\" id=\"uri_$check_num\" name=\"uri\" value=\"",
-        $requested_uri, "\" /></p>
+        $requested_uri, "\" autofocus placeholder=\"http://domain.com\" /></p>
 <fieldset id=\"extra_opt_uri_$check_num\" class=\"moreoptions\">
-	<legend class=\"toggletext\">More Options</legend>
+	<legend class=\"toggletext\">추가 옵션</legend>
 	<div class=\"options\">
   <p>
     <label for=\"summary_$check_num\"><input type=\"checkbox\" id=\"summary_$check_num\" name=\"summary\" value=\"on\"",
-        $sum, " /> Summary only</label>
+        $sum, " /> 요약만</label>
     <br />
     <label for=\"hide_redirects_$check_num\"><input type=\"checkbox\" id=\"hide_redirects_$check_num\" name=\"hide_redirects\" value=\"on\"",
         $red,
-        " /> Hide <a href=\"http://tools.ietf.org/html/rfc7231#section-6.4\">redirects</a>:</label>
+        " /> <a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3\"> 재전송</a> 숨기기:</label>
     <label for=\"hide_type_all_$check_num\"><input type=\"radio\" id=\"hide_type_all_$check_num\" name=\"hide_type\" value=\"all\"",
-        $all, " /> all</label>
+        $all, " /> 모두</label>
     <label for=\"hide_type_dir_$check_num\"><input type=\"radio\" id=\"hide_type_dir_$check_num\" name=\"hide_type\" value=\"dir\"",
-        $dir, " /> for directories only</label>
+        $dir, " /> 디렉토리만</label>
     <br />
     <label for=\"no_accept_language_$check_num\"><input type=\"checkbox\" id=\"no_accept_language_$check_num\" name=\"no_accept_language\" value=\"on\"",
         $acc,
-        " /> Don't send the <tt><a href=\"http://tools.ietf.org/html/rfc7231#section-5.3.5\">Accept-Language</a></tt> header</label>
+        " /> <tt><a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4\">Accept-Language</a></tt> 헤>더 보내지 않기</label>
     <br />
     <label for=\"no_referer_$check_num\"><input type=\"checkbox\" id=\"no_referer_$check_num\" name=\"no_referer\" value=\"on\"",
         $ref,
-        " /> Don't send the <tt><a href=\"http://tools.ietf.org/html/rfc7231#section-5.5.2\">Referer</a></tt> header</label>
+        " /> <tt><a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.36\">Referer</a></tt> 헤더 보내>지 않기</label>
     <br />
-    <label title=\"Check linked documents recursively (maximum: ",
+    <label title=\"링크된 문서를 재귀적으로 검사 (최대: ",
         $Opts{Max_Documents},
         " documents)\" for=\"recursive_$check_num\"><input type=\"checkbox\" id=\"recursive_$check_num\" name=\"recursive\" value=\"on\"",
-        $rec, " /> Check linked documents recursively</label>,
-    <label title=\"Depth of the recursion (-1 is the default and means unlimited)\" for=\"depth_$check_num\">recursion depth: <input type=\"text\" size=\"3\" maxlength=\"3\" id=\"depth_$check_num\" name=\"depth\" value=\"",
+        $rec, " /> 링크된 문서를 재귀적으로 검사</label>,
+    <label title=\"재귀의 깊이 (기본값은 -1 이며, 무제한을 의미)\" for=\"depth_$check_num\">재귀 단계: <input type=\"text\" size=\"3\" maxlength=\"3\" id=\"depth_$check_num\" name=\"depth\" value=\"",
         $dep, "\" /></label>
     <br /><br />", $cookie_options, "
   </p>
@@ -3254,12 +3252,7 @@ sub encode (@)
 sub hprintf (@)
 {
     print_doc_header();
-    if (!$Opts{HTML}) {
-        printf(@_);
-    }
-    else {
-        print HTML::Entities::encode(sprintf($_[0], @_[1 .. @_ - 1]));
-    }
+    printf(@_);
     return;
 }
 
