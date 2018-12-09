@@ -5,11 +5,15 @@
    See http://www.w3.org/Consortium/Legal/ipr-notice.html#Copyright
 */
 
+@import url(//cdn.kldp.org/fonts/css/nanumbarungothicweb.css);
+@import url(//cdn.kldp.org/fonts/Free/Tlab/css/gyeonggititle.css);
+@import url(//cdn.kldp.org/fonts/css/d2coding.css);
+
 html, body {
     line-height: 120%;
     color: black;
     background: white;
-    font-family: "Bitstream Vera Sans", sans-serif;
+    font-family: "나눔바른고딕", "Nanum Barun Gothic Web", "Bitstream Vera Sans", sans-serif;
     margin: 0;
     padding: 0;
     border: 0;
@@ -49,7 +53,7 @@ abbr[title], acronym[title], span[title], strong[title] {
 }
 
 pre, code, tt {
-    font-family: "Bitstream Vera Sans Mono", monospace;
+    font-family: D2Coding, "D2 coding", "Bitstream Vera Sans Mono", monospace;
     line-height: 100%;
     white-space: pre;
 }
@@ -102,7 +106,7 @@ fieldset p {
 }
 
 input#uri {
-    font-family: Monaco, "Courier New", Monospace;
+    font-family: D2Coding, "D2 coding", Monaco, "Courier New", Monospace;
     font-size: 0.9em;
     border: 1px solid #BBB;
     border-top: 1px solid #777;
@@ -203,7 +207,7 @@ p.copyright {
     text-transform: uppercase;
     margin-left: auto;
     margin-right:auto;
-    font-family: "Bitstream Vera Sans Mono", monospace;
+    font-family: D2Coding, "D2 coding", "Bitstream Vera Sans Mono", monospace;
     color: #888;
     line-height: 120%;
 }
@@ -216,7 +220,7 @@ p.copyright a {
 /* Various header(ish) things. Definitions cribbed from the CORE Styles. */
 
 h1#title {
-    font-family: "Myriad Web", "Myriad Pro", "Gill Sans", Helvetica, Arial, Sans-Serif;
+    font-family: "GyeonggiTitle", "Myriad Web", "Myriad Pro", "Gill Sans", Helvetica, Arial, Sans-Serif;
     background-color: #365D95;
     color: #FDFDFD;
     font-size: 1.6em;
@@ -411,6 +415,25 @@ span.err_type img {
     vertical-align: middle;
 }
 
-/* W3C includes (donation and sponsorship program) */
-#w3c-include {}
+/* donation and sponsorship program */
 
+div#don_program {
+    border: 1px solid #55B05A;
+    padding: .5em;
+    line-height: 150%;
+    text-align: center;
+    margin-top: .5em;
+}
+div#don_program span#don_program_img {
+    float: left;
+    width: 150px;
+    height: 60px;
+}
+div#don_program span#don_program_img img {
+    vertical-align: middle;
+}
+div#don_program span#don_program_text {
+}
+div#don_program span#don_program_text a {
+    font-weight: bold;
+}
