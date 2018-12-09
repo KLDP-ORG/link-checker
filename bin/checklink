@@ -3200,10 +3200,10 @@ sub print_form (\%$$)
 
     print "<form action=\"", $Opts{_Self_URI},
         "\" method=\"get\" onsubmit=\"return uriOk($check_num)\" accept-charset=\"UTF-8\">
-<p><label for=\"uri_$check_num\">검사할 문싀의 주소(<a href=\"http://www.w3.org/Addressing/\">URL</a>)
+<p><label for=\"uri_$check_num\">검사할 문서의 주소(<a href=\"http://www.w3.org/Addressing/\">URL</a>)
 입력:</label></p>
 <p><input type=\"text\" size=\"50\" id=\"uri_$check_num\" name=\"uri\" value=\"",
-        $requested_uri, "\" autofocus placeholder=\"http://domain.com\" /></p>
+        $requested_uri, "\" autofocus placeholder=\"Enter a URL like http://domain.com\" /></p>
 <fieldset id=\"extra_opt_uri_$check_num\" class=\"moreoptions\">
 	<legend class=\"toggletext\">추가 옵션</legend>
 	<div class=\"options\">
@@ -3221,11 +3221,11 @@ sub print_form (\%$$)
     <br />
     <label for=\"no_accept_language_$check_num\"><input type=\"checkbox\" id=\"no_accept_language_$check_num\" name=\"no_accept_language\" value=\"on\"",
         $acc,
-        " /> <tt><a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4\">Accept-Language</a></tt> 헤>더 보내지 않기</label>
+        " /> <tt><a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4\">Accept-Language</a></tt> 헤더 보내지 않기</label>
     <br />
     <label for=\"no_referer_$check_num\"><input type=\"checkbox\" id=\"no_referer_$check_num\" name=\"no_referer\" value=\"on\"",
         $ref,
-        " /> <tt><a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.36\">Referer</a></tt> 헤더 보내>지 않기</label>
+        " /> <tt><a href=\"http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.36\">Referer</a></tt> 헤더 보내지 않기</label>
     <br />
     <label title=\"링크된 문서를 재귀적으로 검사 (최대: ",
         $Opts{Max_Documents},

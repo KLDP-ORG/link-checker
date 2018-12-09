@@ -5,15 +5,16 @@
    See http://www.w3.org/Consortium/Legal/ipr-notice.html#Copyright
 */
 
-@import url(//cdn.kldp.org/fonts/css/nanumbarungothicweb.css);
+@import url(//cdn.kldp.org/fonts/css/nanumgothic.css);
 @import url(//cdn.kldp.org/fonts/Free/Tlab/css/gyeonggititle.css);
 @import url(//cdn.kldp.org/fonts/css/d2coding.css);
 
 html, body {
-    line-height: 120%;
+    line-height: 150%;
     color: black;
     background: white;
-    font-family: "나눔바른고딕", "Nanum Barun Gothic Web", "Bitstream Vera Sans", sans-serif;
+    font-family: "나눔고딕", "Nanum Gothic", "Bitstream Vera Sans", sans-serif;
+	font-size: 1.0em;
     margin: 0;
     padding: 0;
     border: 0;
@@ -54,7 +55,7 @@ abbr[title], acronym[title], span[title], strong[title] {
 
 pre, code, tt {
     font-family: D2Coding, "D2 coding", "Bitstream Vera Sans Mono", monospace;
-    line-height: 100%;
+    line-height: 120%;
     white-space: pre;
 }
 
@@ -117,6 +118,13 @@ input#uri {
     font-variant: normal;
     width: 95%;
     margin: 0.3em 0 0 1em;
+}
+
+input#uri_1 {
+    border-top: 1px solid #777;
+    border-bottom: 1px solid #DDD;
+	border-right: 1px solid #bbb;
+	border-left: 1px solid #bbb
 }
 
 p.submit_button {
@@ -415,25 +423,6 @@ span.err_type img {
     vertical-align: middle;
 }
 
-/* donation and sponsorship program */
+/* W3C includes (donation and sponsorship program) */
+#w3c-include {}
 
-div#don_program {
-    border: 1px solid #55B05A;
-    padding: .5em;
-    line-height: 150%;
-    text-align: center;
-    margin-top: .5em;
-}
-div#don_program span#don_program_img {
-    float: left;
-    width: 150px;
-    height: 60px;
-}
-div#don_program span#don_program_img img {
-    vertical-align: middle;
-}
-div#don_program span#don_program_text {
-}
-div#don_program span#don_program_text a {
-    font-weight: bold;
-}
